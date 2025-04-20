@@ -1,10 +1,10 @@
-# truncAC
+# Learning Treatment Effects under Covariate Dependent Left Truncation and Right Censoring
 
 ## Contents of the Repository
 
 - `src/`: Code for implementing the estimators.
 
-- `OSG/`: Code used to run simulations on Open Science Grid (OSG).
+- `OSG/`: Code used to run simulations on OSG.
   - `ATE/`: Code used for ATE simulation.
     - `main_simu2_boot_OSG.R`: Main code for simulating data and computing the 'dr' estimator.
     - `main_cfdr_simu2_boot_OSG.R`: Main code for simulating data and computing the 'cf' estimator.
