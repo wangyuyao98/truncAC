@@ -1,0 +1,5 @@
+Bootstrap: docker
+From: opensciencegrid/osgvo-r:4.0.2
+
+%post
+    R -e "install.packages(c('boot', 'cvTools','survival','randomForestSRC','Matrix','splines','survPen','LTRCforests','glmnet'), dependencies=TRUE, repos='http://cran.rstudio.com/')"
