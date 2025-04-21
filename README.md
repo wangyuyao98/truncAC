@@ -13,9 +13,11 @@
     
   - `CATE/`: code for CATE simulation.
     - `main_HTEx_cf.R`: Main code for simulating data from setting 'HTEx' and compute the CATE estimator. 
-    'HTE3', 'HTE5', 'HTE4' correspon to Scenarios (i), (ii), and (iii), respectively.
+    'HTE3', 'HTE5', 'HTE4' correspond to Scenarios (i), (ii), and (iii), respectively.
     - `organize_OSG_results_HTE.R`: Code for organizing the results collected from OSG.
     
-    
+  - `HAAS_analysis/`: code for HAAS data analysis.
+    - `main_HAAS_educ2.R`: The main code for CATE analysis.
+    - `main_HAAS_educ2_ATE_OSG.R`: The maind code for estimating ATE on OSG.
     
     
