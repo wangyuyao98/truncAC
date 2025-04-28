@@ -1,23 +1,34 @@
 # main function for generating data and compute the estimator
-
 rm(list = ls())
+setwd(dirname(rstudioapi::getSourceEditorContext()$path))
+getwd()
 
 library(survival)
 library(boot)
 
+# Load code under the `src/` folder
 source("gen2.R")
 source("est_nuisance.R")
 source("misc.R")
-source("truncAIPW.R")
-source("truncC_AIPW.R")
 source("truncAC_AIPW.R")
+# Load C++ implementation
+library("Rcpp")
+library("RcppArmadillo")
+Rcpp::sourceCpp("fast_integrals.cpp")
 
-load("seeds_input.rda")
+
+# load("seeds_input.rda") # load seeds
+seed = 123
+seed.b = 213
+
+## Input parameters under the `inputs` folder.
 load("simu_setting2.rda")
 
+
+
 ## prepare the inputs
-n = 1000 
-n.boot = 20
+n = 500 
+n.boot = 1
 
 # models
 model.T = "Cox"

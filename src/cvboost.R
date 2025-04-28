@@ -76,17 +76,44 @@ cvboost2 = function(x,
       #               gamma = runif(1, 0.0, 0.2),
       #               min_child_weight = sample(1:20, 1),
       #               max_delta_step = sample(1:10, 1))  # candidate of tuning parameters before 2024-12-30
-      param <- list(objective = objective,
-                    eval_metric = eval,
-                    subsample = sample(c(0.6, 0.7, 0.8, 0.9), 1),
-                    colsample_bytree = sample(c(0.6, 0.8, 1), 1),
-                    eta = sample(c(5e-3, 1e-2, 0.015, 0.025, 5e-2, 8e-2, 1e-1, 2e-1, 0.3, 0.5), 1),
-                    max_depth = sample(c(3:10), 1),
-                    gamma = sample(c(0, 0.1, 0.2, 0.5, 1, 2, 3, 4, 5), 1),
-                    min_child_weight = sample(5:20, 1),
-                    max_delta_step = sample(1:10, 1),
-                    lambda = sample(c(0, 0.5, 1, 2), 1),
-                    alpha = sample(c(0, 0.5, 1, 2), 1))  # 2024-12-31
+      # param <- list(objective = objective,
+      #               eval_metric = eval,
+      #               subsample = sample(c(0.6, 0.7, 0.8, 0.9), 1),
+      #               colsample_bytree = sample(c(0.6, 0.8, 1), 1),
+      #               eta = sample(c(5e-3, 1e-2, 0.015, 0.025, 5e-2, 8e-2, 1e-1, 2e-1, 0.3, 0.5), 1),
+      #               max_depth = sample(c(3:10), 1),
+      #               gamma = sample(c(0, 0.1, 0.2, 0.5, 1, 2, 3, 4, 5), 1),
+      #               min_child_weight = sample(5:20, 1),
+      #               max_delta_step = sample(1:10, 1),
+      #               lambda = sample(c(0, 0.5, 1, 2), 1),
+      #               alpha = sample(c(0, 0.5, 1, 2), 1))  # 2024-12-31
+      
+      # # Use the same tuning parameters used in cvboost_wsq() # updated 2025-04-21 - original
+      # param <- list(subsample = sample(c(0.5, 0.7, 0.9), 1), # sample(c(0.8, 0.9, 1), 1) sample(c(0.5, 0.7, 0.9), 1)
+      #               colsample_bytree = sample(c(0.6, 0.8, 1), 1),
+      #               eta = sample(c(0.001, 0.005, 0.01, 0.02, 0.05, 0.08, 0.1), 1),
+      #               max_depth = sample(c(2:6), 1),
+      #               gamma = sample(c(0, 0.5, 1, 2, 3, 5), 1),
+      #               min_child_weight = sample(seq(10, 50, by = 5), 1),
+      #               max_delta_step = sample(seq(0, 10, by = 2), 1))
+      
+      # # 2025-04-27 for HAAS application - try3
+      # param <- list(subsample = sample(c(0.7, 0.8, 0.9, 1), 1),
+      #               colsample_bytree = sample(c(0.6, 0.8, 1), 1),
+      #               eta = sample(c(0.001, 0.005, 0.01, 0.02, 0.05), 1),
+      #               max_depth = sample(c(2:6), 1),
+      #               gamma = sample(c(0, 0.5, 1, 2, 3, 5), 1),
+      #               min_child_weight = sample(seq(10, 70, by = 10), 1),
+      #               max_delta_step = sample(seq(0, 10, by = 2), 1))
+      
+      # 2025-04-27 for HAAS application - try4: suggested by chatGPT for getting more smooth surface
+      param <- list(subsample = sample(c(0.8, 0.9, 1), 1),
+                    colsample_bytree = sample(c(0.8, 0.9, 1), 1),
+                    eta = sample(c(0.01, 0.02, 0.03, 0.04, 0.05), 1),
+                    max_depth = sample(c(2:5), 1),
+                    gamma = sample(c(0, 0.5, 1, 2), 1),
+                    min_child_weight = sample(seq(10, 50, by = 10), 1),
+                    max_delta_step = sample(2:5, 1))
       
       seed_number = sample.int(100000, 1)[[1]]
       set.seed(seed_number)

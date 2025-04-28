@@ -117,6 +117,7 @@ cf_truncAC_AIPW <- function(dat, K, nu, X.name, Q.name, event.name, A.name,
                                lambda = options.F$lambda, df = options.F$df)
         }else{
             Fuz.mx.est = Fuz.mx[id.est, ]
+            u = as.numeric(colnames(Fuz.mx))
         }
         
         if(is.null(Fuz_A1.mx)){
@@ -162,14 +163,16 @@ cf_truncAC_AIPW <- function(dat, K, nu, X.name, Q.name, event.name, A.name,
             
         }else{
             Sdz.mx.est = Sdz.mx[id.est, ]
+            d <- as.numeric(colnames(Sdz.mx))
         }
         
         
         
         ## Estimate G - using truncation weights 1/{1-F(Q|A,Z)} estimated using fit.si, and use fit.sj to estimate G, i\neq j \in \{1,2\} 
-        v = c(tau1-1e-10, jumps.Q[jumps.Q>=tau1], max(jumps.Q)+1e-10)
-        # v = c(tau1-1e-10, jumps.Q, max(jumps.Q)+1e-10)
         if(is.null(Gvz.mx)){
+            v = c(tau1-1e-10, jumps.Q[jumps.Q>=tau1], max(jumps.Q)+1e-10)
+            # v = c(tau1-1e-10, jumps.Q, max(jumps.Q)+1e-10)
+            
             if(est_approach_G == "truncIPW.F"){
                 Fq.vec.fit = NULL
                 
@@ -184,7 +187,7 @@ cf_truncAC_AIPW <- function(dat, K, nu, X.name, Q.name, event.name, A.name,
                                                nfolds = options.F$nfolds, s = options.F$s, alpha = options.F$alpha,
                                                lambda = options.F$lambda, df = options.F$df))
                 }else{
-                    Fq.vec.fit = CDF_eval(dat.fit[ ,Q.name], Fuz.mx[id.fit,])
+                    Fq.vec.fit = diag(CDF_eval_mx_cpp(dat.fit[ ,Q.name], Fuz.mx[id.fit,], u))
                 }
                 
                 
@@ -218,7 +221,7 @@ cf_truncAC_AIPW <- function(dat, K, nu, X.name, Q.name, event.name, A.name,
                                                    nfolds = options.Sd$nfolds, s = options.Sd$s, alpha = options.Sd$alpha,
                                                    lambda = options.Sd$lambda, df = options.Sd$df))
                 }else{
-                    Sdy.vec.fit_1 = 1- CDF_eval(X.res_1, 1-Sdz.mx[id.fit,][id.fit_1,])
+                    Sdy.vec.fit_1 = 1- diag(CDF_eval_mx_cpp(X.res_1, 1-Sdz.mx[id.fit,][id.fit_1,], d))
                 }
                 
                 w_IPCW_1 = 1/pmax(Sdy.vec.fit_1, trim)
@@ -239,6 +242,7 @@ cf_truncAC_AIPW <- function(dat, K, nu, X.name, Q.name, event.name, A.name,
             
         }else{
             Gvz.mx.est = Gvz.mx[id.est, ]
+            v <- as.numeric(colnames(Gvz.mx))
         }
         
         
@@ -261,7 +265,7 @@ cf_truncAC_AIPW <- function(dat, K, nu, X.name, Q.name, event.name, A.name,
                                                    nfolds = options.F$nfolds, s = options.F$s, alpha = options.F$alpha,
                                                    lambda = options.F$lambda, df = options.F$df))
                     }else{
-                        Fq.vec.fit = CDF_eval(dat.fit[ ,Q.name], Fuz.mx[id.fit,])
+                        Fq.vec.fit = diag(CDF_eval_mx_cpp(dat.fit[ ,Q.name], Fuz.mx[id.fit,], u))
                     }
                     
                     w_truncF.fit = 1/pmax(1-Fq.vec.fit, trim)
@@ -294,7 +298,7 @@ cf_truncAC_AIPW <- function(dat, K, nu, X.name, Q.name, event.name, A.name,
                                                     nfolds = options.Sd$nfolds, s = options.Sd$s, alpha = options.Sd$alpha,
                                                     lambda = options.Sd$lambda, df = options.Sd$df))
                 }else{
-                    Sdy.vec.fit = 1- CDF_eval(X.res_1, 1-Sdz.mx[id.fit,][id.fit_1,])
+                    Sdy.vec.fit = 1- diag(CDF_eval_mx_cpp(X.res_1, 1-Sdz.mx[id.fit,][id.fit_1,], d))
                 }
                 
                 # IPCW weights
@@ -311,7 +315,7 @@ cf_truncAC_AIPW <- function(dat, K, nu, X.name, Q.name, event.name, A.name,
                                                     lambda = options.G$lambda, df = options.G$df) )
                     
                 }else{
-                    Gx.vec.fit_1 = CDF_eval(X_1, Gvz.mx[id.fit,][id.fit_1,])  # For uncensored subjects
+                    Gx.vec.fit_1 = diag(CDF_eval_mx_cpp(X_1, Gvz.mx[id.fit,][id.fit_1,], v))  # For uncensored subjects
                 }
                 
                 w_trunc.fit_1 = 1/pmax(Gx.vec.fit_1, trim)
@@ -368,8 +372,8 @@ cf_truncAC_AIPW <- function(dat, K, nu, X.name, Q.name, event.name, A.name,
         mu1_hat[id.est] = mu_A1.est
         mu0_hat[id.est] = mu_A0.est
         PS_hat[id.est] = PS.est
-        GXZ_hat[id.est] = CDF_eval(dat.est[,X.name], Gvz.mx.est)
-        SdXZ_hat[id.est] = 1 - CDF_eval(dat.est[,X.name] - dat.est[,Q.name], 1-Sdz.mx.est)
+        GXZ_hat[id.est] = diag(CDF_eval_mx_cpp(dat.est[,X.name], Gvz.mx.est, v))
+        SdXZ_hat[id.est] = 1 - diag(CDF_eval_mx_cpp(dat.est[,X.name] - dat.est[,Q.name], 1-Sdz.mx.est, d))
         
     }
 

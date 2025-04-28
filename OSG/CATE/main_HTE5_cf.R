@@ -7,8 +7,8 @@ rm(list = ls())
 # library(boot)
 library(cvTools)  # used for creating folds for cross-fitting
 library(survival)
-library(randomForestSRC)
-library(LTRCforests)
+# library(randomForestSRC)
+# library(LTRCforests)
 library(glmnet)
 library(Matrix)
 library(splines)
@@ -16,21 +16,25 @@ library(survPen)
 library(gbm)
 library(xgboost)
 
-# setwd("~/Documents/research/LeftTruncation/github/left_trunc_causal_C/src")
+# Load code under the `src/` folder
 source("est_nuisance.R")
 source("misc.R")
-source("truncAIPW.R")
 source("truncAC_AIPW.R")
-source("truncC_AIPW.R")
 source("gen_HTE5.R")  # simulate T(a) from AFT model - the true tau() with nu = log() is a linear function in Z1
 source("trunclearner.R")
 source("cvboost.R")
 source("cvboost_wsq.R")
+# Load C++ implementation
+library("Rcpp")
+library("RcppArmadillo")
+Rcpp::sourceCpp("fast_integrals.cpp")
 
-# load("~/Documents/research/LeftTruncation/github/left_trunc_causal_C/seeds.rda")
-# load("~/Documents/research/LeftTruncation/github/left_trunc_causal_C/inputs/simu_setting2.rda")
-load("seeds_input.rda")
-load("simu_setting2.rda")  # inputs/simu_setting2.rda
+# load("seeds_input.rda") # load seeds
+seed = 123
+seed.b = 213
+
+## Input parameters under the `inputs` folder.
+load("simu_setting2.rda")
 
 
 rm(gamma.A, T.min, beta.T, beta.C, beta.Q)

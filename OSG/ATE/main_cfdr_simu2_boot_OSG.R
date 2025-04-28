@@ -1,38 +1,44 @@
 # main function for generating data and compute the estimator
 rm(list = ls())
+# setwd("~/Documents/research/LeftTruncation/github/left_trunc_causal_C")
 
 library(boot)
 library(cvTools)  # used for creating folds for cross-fitting
 library(survival)
-library(randomForestSRC)
-library(LTRCforests)
+# library(randomForestSRC)
+# library(LTRCforests)
 library(glmnet)
 library(Matrix)
 library(splines)
 library(survPen)
 library(gbm)
 
-# setwd("src")
+# Code under the `src/` folder
 source("gen2.R")
 source("est_nuisance.R")
 source("misc.R")
-source("truncAIPW.R")
-source("truncAC_AIPW.R")
-source("truncC_AIPW.R")
-source("truncAC_AIPW_cf.R")
+source("truncAC_AIPW.R")  # Contains both the dr and cf estimators
+# Load C++ implementation
+library("Rcpp")
+library("RcppArmadillo")
+Rcpp::sourceCpp("fast_integrals.cpp")
 
-# load("inputs/simu_setting2.rda")
-load("seeds_input.rda")  # contain two seeds: `seed` for simulating data, and `seed.b` for bootstrap
+
+# load("seeds_input.rda") # load seeds
+seed = 123
+seed.b = 213
+
+## Input parameters under the `inputs` folder.
 load("simu_setting2.rda")
 
-n = 1000
+n = 500
+n.boot = 1  # number of bootstrap
 
 ## prepare the inputs 
 K = 5   # number of folds for cross-fitting
 trim = 0.05   
 trim.est = 0
 df = 7
-n.boot = 10  # number of bootstrap
 
 # models
 model.T = "pCox"  # "Cox", "pCox", "survPen", "RF"

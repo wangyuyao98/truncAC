@@ -22,15 +22,15 @@ trunclearner <- function(dat, nu, cov.names.CATE, cov.names.CATE.binary = NULL, 
                           k_folds=NULL,
                           objective= "reg:squarederror",
                           ntrees_max=500,
-                          num_search_rounds=20,
+                          num_search_rounds=200,
                           print_every_n=100,
                           early_stopping_rounds=10,
                           nthread=NULL,
                           verbose=FALSE, 
                           simulation = TRUE,
-                         trim1 = 0.05,
-                         trim2 = 0,
-                         save_cvfit = FALSE){
+                          trim1 = 0.05,
+                          trim2 = 0,
+                          save_cvfit = FALSE){
     # Remove the df and alpha option in the above imputs of the function
     # lambda also seems to be un-used
     
@@ -97,6 +97,8 @@ trunclearner <- function(dat, nu, cov.names.CATE, cov.names.CATE.binary = NULL, 
     SdXZ_hat = rep(NA, n)
     PS_hat = rep(NA, n)
     
+    t1 <- Sys.time()  # record time
+    
     # ct = 0
     folds <- cvFolds(n, K)
     for(k in 1:K){
@@ -149,6 +151,7 @@ trunclearner <- function(dat, nu, cov.names.CATE, cov.names.CATE.binary = NULL, 
                                lambda = options.F$lambda, df = options.F$df)
         }else{
             Fuz.mx.est = Fuz.mx[id.est, ]
+            u = as.numeric(colnames(Fuz.mx))
         }
         
         if(is.null(Fuz_A1.mx)){
@@ -214,14 +217,16 @@ trunclearner <- function(dat, nu, cov.names.CATE, cov.names.CATE.binary = NULL, 
             
         }else{
             Sdz.mx.est = Sdz.mx[id.est, ]
+            d <- as.numeric(colnames(Sdz.mx))
         }
         
         
         
         ## Estimate G - using truncation weights 1/{1-F(Q|A,Z)} estimated using fit.si, and use fit.sj to estimate G, i\neq j \in \{1,2\} 
-        v = c(tau1-1e-10, jumps.Q[jumps.Q>=tau1], max(jumps.Q)+1e-10)
-        # v = c(tau1-1e-10, jumps.Q, max(jumps.Q)+1e-10)
         if(is.null(Gvz.mx)){
+            v = c(tau1-1e-10, jumps.Q[jumps.Q>=tau1], max(jumps.Q)+1e-10)
+            # v = c(tau1-1e-10, jumps.Q, max(jumps.Q)+1e-10)
+            
             if(est_approach_G == "truncIPW.F"){
                 Fq.vec.fit = NULL
                 
@@ -236,7 +241,7 @@ trunclearner <- function(dat, nu, cov.names.CATE, cov.names.CATE.binary = NULL, 
                                             nfolds = options.F$nfolds, s = options.F$s, alpha = options.F$alpha,
                                             lambda = options.F$lambda, df = options.F$df))
                 }else{
-                    Fq.vec.fit = CDF_eval(dat.fit[ ,Q.name], Fuz.mx[id.fit,])
+                    Fq.vec.fit = diag(CDF_eval_mx_cpp(dat.fit[ ,Q.name], Fuz.mx[id.fit,], u))
                 }
                 
                 
@@ -270,7 +275,7 @@ trunclearner <- function(dat, nu, cov.names.CATE, cov.names.CATE.binary = NULL, 
                                                 nfolds = options.Sd$nfolds, s = options.Sd$s, alpha = options.Sd$alpha,
                                                 lambda = options.Sd$lambda, df = options.Sd$df))
                 }else{
-                    Sdy.vec.fit_1 = 1- CDF_eval(X.res_1, 1-Sdz.mx[id.fit,][id.fit_1,])
+                    Sdy.vec.fit_1 = 1- diag(CDF_eval_mx_cpp(X.res_1, 1-Sdz.mx[id.fit,][id.fit_1,], d))
                 }
                 
                 w_IPCW_1 = 1/pmax(Sdy.vec.fit_1, trim)
@@ -311,6 +316,7 @@ trunclearner <- function(dat, nu, cov.names.CATE, cov.names.CATE.binary = NULL, 
             
         }else{
             Gvz.mx.est = Gvz.mx[id.est, ]
+            v <- as.numeric(colnames(Gvz.mx))
         }
         
         
@@ -333,7 +339,7 @@ trunclearner <- function(dat, nu, cov.names.CATE, cov.names.CATE.binary = NULL, 
                                                 nfolds = options.F$nfolds, s = options.F$s, alpha = options.F$alpha,
                                                 lambda = options.F$lambda, df = options.F$df))
                     }else{
-                        Fq.vec.fit = CDF_eval(dat.fit[ ,Q.name], Fuz.mx[id.fit,])
+                        Fq.vec.fit = diag(CDF_eval_mx_cpp(dat.fit[ ,Q.name], Fuz.mx[id.fit,], u))
                     }
                     
                     w_truncF.fit = 1/pmax(1-Fq.vec.fit, trim)
@@ -366,7 +372,7 @@ trunclearner <- function(dat, nu, cov.names.CATE, cov.names.CATE.binary = NULL, 
                                               nfolds = options.Sd$nfolds, s = options.Sd$s, alpha = options.Sd$alpha,
                                               lambda = options.Sd$lambda, df = options.Sd$df))
                 }else{
-                    Sdy.vec.fit = 1- CDF_eval(X.res_1, 1-Sdz.mx[id.fit,][id.fit_1,])
+                    Sdy.vec.fit = 1- diag(CDF_eval_mx_cpp(X.res_1, 1-Sdz.mx[id.fit,][id.fit_1,], d))
                 }
                 
                 # IPCW weights
@@ -383,7 +389,7 @@ trunclearner <- function(dat, nu, cov.names.CATE, cov.names.CATE.binary = NULL, 
                                                lambda = options.G$lambda, df = options.G$df) )
                     
                 }else{
-                    Gx.vec.fit_1 = CDF_eval(X_1, Gvz.mx[id.fit,][id.fit_1,])  # For uncensored subjects
+                    Gx.vec.fit_1 = diag(CDF_eval_mx_cpp(X_1, Gvz.mx[id.fit,][id.fit_1,], v))  # For uncensored subjects
                 }
                 
                 w_trunc.fit_1 = 1/pmax(Gx.vec.fit_1, trim)
@@ -424,8 +430,8 @@ trunclearner <- function(dat, nu, cov.names.CATE, cov.names.CATE.binary = NULL, 
         nuuT_A0.mx = matrix(rep(nu(u_A0), nrow(dat.est)), nrow = nrow(dat.est), byrow = TRUE)
         tau.Tmax_A1 = max(u_A1) + 1e-5
         tau.Tmax_A0 = max(u_A0) + 1e-5
-        mu_A1.est = as.vector(int_fmx_dF(tau.Tmax_A1, nuuT_A1.mx, Fuz_A1.mx.est))
-        mu_A0.est = as.vector(int_fmx_dF(tau.Tmax_A0, nuuT_A0.mx, Fuz_A0.mx.est))
+        mu_A1.est = as.vector(int_fmx_dF_cpp(tau.Tmax_A1, nuuT_A1.mx, Fuz_A1.mx.est, u_A1))
+        mu_A0.est = as.vector(int_fmx_dF_cpp(tau.Tmax_A0, nuuT_A0.mx, Fuz_A0.mx.est, u_A0))
         m_Z.est = mu_A1.est * PS.est + mu_A0.est * (1-PS.est)
         
         
@@ -443,14 +449,19 @@ trunclearner <- function(dat, nu, cov.names.CATE, cov.names.CATE.binary = NULL, 
         mu1_hat[id.est] = mu_A1.est
         mu0_hat[id.est] = mu_A0.est
         PS_hat[id.est] = PS.est
-        GXZ_hat[id.est] = CDF_eval(dat.est[,X.name], Gvz.mx.est)
-        SdXZ_hat[id.est] = CDF_eval(dat.est[,X.name] - dat.est[,Q.name], Sdz.mx.est)
+        GXZ_hat[id.est] = diag(CDF_eval_mx_cpp(dat.est[,X.name], Gvz.mx.est, v))
+        SdXZ_hat[id.est] = diag(CDF_eval_mx_cpp(dat.est[,X.name] - dat.est[,Q.name], Sdz.mx.est, d))
         
     }
+    
+    t2 <- Sys.time()  # record time
+    
+    print(paste("Finished computation for cf part. Time elapsed (minutes):", 
+                round(as.numeric(difftime(t2, t1, units = "mins")), 2)))
+    
 
     A = dat[,A.name]
     nuT_tilde = truncC_AIPW_nuT/bound_away_zero(truncC_AIPW_1, trim1)
-    
     
     
     
@@ -484,6 +495,11 @@ trunclearner <- function(dat, nu, cov.names.CATE, cov.names.CATE.binary = NULL, 
                              verbose = verbose)
     CATE_est_R = predict(cvfit_wsq_R, newx = Z_CATE)
     
+    t3 <- Sys.time()  # record time
+    
+    print(paste("Finished ltrcR-learner tuning and final prediction. Time elapsed (minutes):", 
+                round(as.numeric(difftime(t3, t2, units = "mins")), 2)))
+    
     
     # truncDR-learner with xgboost
     mu_A.vec = A*mu1_hat + (1-A)*mu0_hat
@@ -497,6 +513,11 @@ trunclearner <- function(dat, nu, cov.names.CATE, cov.names.CATE.binary = NULL, 
                                nthread  = nthread,
                                verbose = verbose)
     CATE_est_DR = predict(cvfit_wsq_DR, newx = Z_CATE)
+    
+    t4 <- Sys.time()  # record time
+    
+    print(paste("Finished ltrcDR-learner tuning and final prediction. Time elapsed (minutes):", 
+                round(as.numeric(difftime(t4, t3, units = "mins")), 2)))
     
     
     # S-learner with xgboost
@@ -530,6 +551,15 @@ trunclearner <- function(dat, nu, cov.names.CATE, cov.names.CATE.binary = NULL, 
                        nthread = nthread,
                        verbose = verbose)
     CATE_est_S = predict(cvfit_S, newx = Z_CATE)
+    
+    t5 <- Sys.time()  # record time
+    
+    print(paste("Finished IPW.S-learner tuning and final prediction. Time elapsed (minutes):", 
+                round(as.numeric(difftime(t5, t4, units = "mins")), 2)))
+    
+    print(paste("Total time elapsed (minutes):", 
+                round(as.numeric(difftime(t5, t1, units = "mins")), 2)))
+    
     
     # ## Visualize the estimated CATE when there is only one covariate and save the results -----------------
     # pdf(paste("HAAS_analysis/plots/CATE/nonparametric/CATE_surv90_pCox_", cov.names.CATE,

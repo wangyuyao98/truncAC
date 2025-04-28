@@ -3,14 +3,12 @@
 rm(list = ls())
 # setwd(dirname(rstudioapi::getSourceEditorContext()$path))
 
-start_time <- Sys.time()
-system.time({
     
 # library(boot)
 library(cvTools)  # used for creating folds for cross-fitting
 library(survival)
-library(randomForestSRC)
-library(LTRCforests)
+# library(randomForestSRC)
+# library(LTRCforests)
 library(glmnet)
 library(Matrix)
 library(splines)
@@ -18,20 +16,25 @@ library(survPen)
 library(gbm)
 library(xgboost)
 
+# Load code under the `src/` folder
 source("est_nuisance.R")
 source("misc.R")
-source("truncAIPW.R")
 source("truncAC_AIPW.R")
-source("truncC_AIPW.R")
-# source("CATE.R")
-# source("development.R")
 source("gen_HTE3.R")  # simulate T(a) from AFT model - the true tau() with nu = log() is a linear function in Z1
 source("trunclearner.R")
 source("cvboost.R")
 source("cvboost_wsq.R")
+# Load C++ implementation
+library("Rcpp")
+library("RcppArmadillo")
+Rcpp::sourceCpp("fast_integrals.cpp")
 
-load("seeds_input.rda")
-load("simu_setting2.rda")  #inputs/simu_setting2.rda
+# load("seeds_input.rda") # load seeds
+seed = 123
+seed.b = 213
+
+## Input parameters under the `inputs` folder.
+load("simu_setting2.rda")
 
 
 rm(gamma.A, T.min, beta.T, beta.C, beta.Q)
@@ -166,13 +169,19 @@ cov.names.A.oracle = c("Z1","Z2")
 PS = truth_PS(dat, cov.names.A.oracle, gamma.A)
 
 
+start_time <- Sys.time()
+system.time({
+
 trunclearner_result_oracle = trunclearner(dat, nu, cov.names.CATE, cov.names.CATE.binary = NULL, K,
                                           X.name, Q.name, event.name, A.name, trim,
                                           Fuz.mx = Fuz.mx, Fuz_A1.mx = Fuz_A1.mx, Fuz_A0.mx = Fuz_A0.mx,
                                           Gvz.mx = Gvz.mx, Sdz.mx = Sdz.mx, PS = PS,
                                           num_search_rounds=num_search_rounds, ntrees_max=ntrees_max)
 
-
+})
+now_time <- Sys.time()
+time_elapsed = now_time - start_time  
+time_elapsed
 
 
 ########### truncR-learner with estimated nuisance parameters ############
@@ -225,6 +234,9 @@ options.PS = list(trim = trim.est,
 options.CATE.xgb = list(booster = "gbtree",
                         nrounds = 100)
 
+
+start_time <- Sys.time()
+system.time({
 
 trunclearner_result = trunclearner(dat, nu, cov.names.CATE, cov.names.CATE.binary = NULL, K,
                                    X.name, Q.name, event.name, A.name, trim = trim,
